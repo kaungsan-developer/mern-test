@@ -3,7 +3,7 @@ import Navbar from "./components/Navbar";
 
 export default function App() {
   return (
-    <div data-theme="light">
+    <div data-theme="light" className="mb-100">
       <Navbar />
 
       <div className="container">
@@ -13,7 +13,7 @@ export default function App() {
               <Link to={"/"}>Home</Link>
             </li>
             <li>
-              <Link to={"/create"}>+ New Note</Link>
+              <Link to={"/create"}>New Note</Link>
             </li>
           </ul>
         </div>

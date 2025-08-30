@@ -1,11 +1,28 @@
 import { useForm } from "react-hook-form";
 import axios from "../libs/axios";
-import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
+import { useNavigate, useParams } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 
-export default function CreateNote() {
-  const [isAdding, setIsAdding] = useState(false);
+async function getNote(id) {
+  const res = await axios.get(`/notes/${id}`);
+  return res.data;
+}
+
+export default function editNote() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false); //if true submit btn disable
+
+  //getting initial value of note
+  const { data, isLoading } = useQuery({
+    queryKey: ["note", id],
+    queryFn: () => getNote(id),
+  });
+
   const {
     register,
     handleSubmit,
@@ -13,30 +30,40 @@ export default function CreateNote() {
     formState: { errors },
   } = useForm({
     defaultValues: {
-      title: "",
-      content: "",
+      title: data?.title || "",
+      content: data?.content || "",
     },
   });
 
+  useEffect(() => {
+    if (data) {
+      reset(data);
+    }
+  }, [data, reset]);
+
+  //edit note request to backend
   const onSubmit = async (data) => {
-    const res = await axios.post("/notes", data);
+    const res = await axios.put(`/notes/${id}`, data);
     return res;
   };
 
-  const noteAddMutate = useMutation({
+  const updateMutate = useMutation({
     mutationFn: onSubmit,
-    onMutate: () => setIsAdding(true),
+    onMutate: () => setIsEditing(true),
     onSuccess: () => {
-      toast.success("A Note Added");
-      reset();
-      setIsAdding(false);
+      toast.success("Edited");
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["note", id] });
+      navigate("/");
     },
   });
+
+  if (isLoading) return <div>Loading</div>;
   return (
     <div className="flex justify-center items-center w-screen py-10">
       <div className="w-full md:w-[70%] lg:w-1/2 mx-5 shadow-lg border border-primary/20 rounded-lg p-5">
-        <h1 className="text-2xl font-bold">Add New Note</h1>
-        <form action="" onSubmit={handleSubmit(noteAddMutate.mutate)}>
+        <h1 className="text-2xl font-bold">Update Note</h1>
+        <form action="" onSubmit={handleSubmit(updateMutate.mutate)}>
           <div className="space-y-5 mt-5">
             <div>
               <label htmlFor="title" className="block font-bold">
@@ -58,7 +85,7 @@ export default function CreateNote() {
               <textarea
                 name="content"
                 id="content"
-                className="textarea textarea-primary w-full"
+                className="textarea  textarea-lg textarea-primary w-full"
                 {...register("content", { required: true })}
               ></textarea>
               {errors?.content && (
@@ -68,9 +95,9 @@ export default function CreateNote() {
             <button
               type="submit"
               className="btn btn-primary float-right"
-              disabled={isAdding}
+              disabled={isEditing}
             >
-              Add
+              Submit
             </button>
           </div>
         </form>
