@@ -6,7 +6,7 @@ export default function App() {
     <div data-theme="light" className="mb-100">
       <Navbar />
 
-      <div className="container">
+      <div className="container mx-auto">
         <div className="breadcrumbs text-sm ms-10">
           <ul>
             <li>
